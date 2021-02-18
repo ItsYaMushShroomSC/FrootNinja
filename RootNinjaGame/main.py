@@ -52,29 +52,44 @@ WHITE = (255, 255, 255)
 GREY = (128, 128, 128)
 
 # Global Variables
+
+
 openScreenRects = []  # stores rectangles of the opening screen
 gameMode = None  # when is gameMode is none, start screen appears
 gameScreenRect = None
 
+resizeFactor = 1
+
+rootGroup = pygame.sprite.Group()
 
 # CLASSES
 
 class Fruit(pygame.sprite.Sprite):
    def __init__(self, images, startPos, endPos):
        pygame.sprite.Sprite.__init__(self)
+       global resizeFactor
 
        self.images = images  # the fruit images, an array with animation images in order, last image is explode img
        self.image = images[0]  # self.image is from the Sprite class
        self.imgIndex = 0
        self.rect = self.image.get_rect()  # from the Sprite class
        self.startXPos, self.startYPos = startPos
-       self.rect.topleft = startPos
        self.vertexXPos, self.vertexYPos = endPos
        self.curPosX, self.curPosY = startPos
+       self.setImgPos()
        self.speedX, self.speedY = 5, 5
        self.movesDone = 0
        self.hasBeenSliced = False
        self.withCombo = False  # boolean that means if False then the Fruit isn't to be added to the combo num
+
+       for i, img in enumerate(self.images):
+           curW, curH = img.get_rect().w, img.get_rect().h
+           self.images[i] = pygame.transform.smoothscale(img.convert_alpha(), (int(curW * resizeFactor), int(curH * resizeFactor)))
+
+       self.image = self.images[self.imgIndex]
+
+   def setImgPos(self):
+       self.rect.center = int(self.curPosX), int(self.curPosY)
 
    def setNewSpeed(self):
        self.endXPos, self.endYPos = 0, 0
@@ -109,8 +124,26 @@ class Fruit(pygame.sprite.Sprite):
            self.rect.center = (centerX + self.speedX, centerY + self.speedY)
 
        # add more
-   def resizeImg(self): # resize image to screen size dimensions
-       pass
+   def resizeImg(self, oldGameScreenRect): # resize image to screen size dimensions
+       global resizeFactor
+
+       factorLengthX = gameScreenRect.w / oldGameScreenRect.w
+       factorLengthY = gameScreenRect.h / oldGameScreenRect.h
+       factorLength = factorLengthX
+
+       if factorLengthX < factorLengthY:
+           factorLength = factorLengthX
+       else:
+           factorLength = factorLengthY
+
+       #Factor = factorLength * resizeFactor
+
+       for i, img in enumerate(self.images):
+           curW, curH = img.get_rect().w, img.get_rect().h
+           self.images[i] = pygame.transform.smoothscale(img, (int(curW * factorLength), int(curH * factorLength)))
+
+       self.image = self.images[self.imgIndex]
+
 
    def drawFruit(self):
        pass
@@ -140,7 +173,15 @@ class Bomb():
 
 
 # GLOBAL METHODS
-def addNewRanFruit():
+#def drawRoots():
+
+def reconfigAllRootsPosAndSize(oldGameScreenRect):
+    for root in rootGroup:
+        root.curPosX, root.curPosY = reconfigFruitPos(root.curPosX, root.curPosY, oldGameScreenRect)
+        root.setImgPos()
+        root.resizeImg(oldGameScreenRect)
+
+def addNewRanRoot():
     images = None
     randy = randint(0, 8)
     if randy == 0:
@@ -199,7 +240,7 @@ def addNewRanFruit():
         images = [img1, img2, img3, img4]
 
     img, (startX, startY), (vertexX, vertexY) = getRanStartAndVertexPos()
-    return Fruit(images, (startX, startY), (vertexX, vertexY))
+    rootGroup.add(Fruit(images, (startX, startY), (vertexX, vertexY)))
 
 def reconfigFruitPos(posX, posY, oldGameScreenRect): # scales the positions of coordinates appropriately when screen size changes
     global gameScreenRect
@@ -283,7 +324,7 @@ def determineMode(position):
        return None
 
 def openingScreen(bool):
-   global DISPLAYSURF, openingFONT, windowWidth, windowHeight, openScreenRects, factor
+   global DISPLAYSURF, openingFONT, windowWidth, windowHeight, openScreenRects, factor, rootGroup
    openScreenRects.clear();
    color1 = RED
    color2 = WATERMELON
@@ -332,6 +373,10 @@ def main():
    drawScreenArea()
    img, (startX, starty), (vertexX, vertexY) = getRanStartAndVertexPos()
    oldGameScreenRect = None
+
+   fruitSpawnTimer = 2000 # when fruitSpawnTimer time has elapsed, a new fruit should spawn
+   startTics = pygame.time.get_ticks()
+
    while True:
        for event in pygame.event.get():
 
@@ -343,9 +388,18 @@ def main():
            if gameMode == 'TIMER' and event.type == my_eventTime:
                redrawScreen()
                oldGameScreenRect = gameScreenRect
+
+               rootGroup.draw(DISPLAYSURF) # draws the roots
+               rootGroup.update()
+
                imgRect = img.get_rect()
                imgRect.center = int(gameScreenRect.left + startX), int(gameScreenRect.top + starty)
                DISPLAYSURF.blit(img, imgRect)
+
+           if gameMode == 'TIMER' and pygame.time.get_ticks() - startTics >= fruitSpawnTimer:
+               startTics = pygame.time.get_ticks()
+               fruitSpawnTimer = randint(400, 4000)
+               addNewRanRoot()
 
            if gameMode == None and event.type == pygame.MOUSEBUTTONUP:
                gameMode = determineMode(pygame.mouse.get_pos())
@@ -367,6 +421,7 @@ def main():
                if not gameMode == None:
                    redrawScreen()
                    startX, starty = reconfigFruitPos(startX, starty, oldGameScreenRect)
+                   reconfigAllRootsPosAndSize(oldGameScreenRect)
 
            if event.type == my_eventTime and pygame.mouse.get_pressed()[0]:
                pygame.draw.aaline(DISPLAYSURF, RED, (initMousePosX, initMousePosY), (pygame.mouse.get_pos()), 6)
