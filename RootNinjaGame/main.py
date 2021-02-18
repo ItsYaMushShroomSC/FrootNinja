@@ -65,7 +65,7 @@ rootGroup = pygame.sprite.Group()
 # CLASSES
 
 class Fruit(pygame.sprite.Sprite):
-   def __init__(self, images, startPos, endPos):
+   def __init__(self, images, startPosAdd, vertexPosAdd):
        pygame.sprite.Sprite.__init__(self)
        global resizeFactor
 
@@ -73,9 +73,9 @@ class Fruit(pygame.sprite.Sprite):
        self.image = images[0]  # self.image is from the Sprite class
        self.imgIndex = 0
        self.rect = self.image.get_rect()  # from the Sprite class
-       self.startXPos, self.startYPos = startPos
-       self.vertexXPos, self.vertexYPos = endPos
-       self.curPosX, self.curPosY = startPos
+       self.startXPos, self.startYPos = gameScreenRect.left + startPosAdd[0], gameScreenRect.top + startPosAdd[1]
+       self.vertexXPos, self.vertexYPos = gameScreenRect.left + vertexPosAdd[0], gameScreenRect.top + vertexPosAdd[1]
+       self.curPosX, self.curPosY = self.startXPos, self.startYPos
        self.setImgPos()
        self.speedX, self.speedY = 5, 5
        self.movesDone = 0
@@ -143,6 +143,8 @@ class Fruit(pygame.sprite.Sprite):
            self.images[i] = pygame.transform.smoothscale(img, (int(curW * factorLength), int(curH * factorLength)))
 
        self.image = self.images[self.imgIndex]
+       self.rect = self.image.get_rect()
+       self.rect.center = self.curPosX, self.curPosY
 
 
    def drawFruit(self):
@@ -177,9 +179,9 @@ class Bomb():
 
 def reconfigAllRootsPosAndSize(oldGameScreenRect):
     for root in rootGroup:
+        root.resizeImg(oldGameScreenRect)
         root.curPosX, root.curPosY = reconfigFruitPos(root.curPosX, root.curPosY, oldGameScreenRect)
         root.setImgPos()
-        root.resizeImg(oldGameScreenRect)
 
 def addNewRanRoot():
     images = None
@@ -240,7 +242,8 @@ def addNewRanRoot():
         images = [img1, img2, img3, img4]
 
     img, (startX, startY), (vertexX, vertexY) = getRanStartAndVertexPos()
-    rootGroup.add(Fruit(images, (startX, startY), (vertexX, vertexY)))
+    left, top = gameScreenRect.topleft
+    rootGroup.add(Fruit(images, (startX + left, startY + top), (startX + vertexX, startY + vertexY)))
 
 def reconfigFruitPos(posX, posY, oldGameScreenRect): # scales the positions of coordinates appropriately when screen size changes
     global gameScreenRect
@@ -258,8 +261,8 @@ def getRanStartAndVertexPos():
     left, top = gameScreenRect.topleft
     left, bottom = gameScreenRect.bottomleft
     w, h = gameScreenRect.w, gameScreenRect.h
-    ranStartXAdd, ranStartYAdd = randint(0, w), h - 20
-    ranVertexXAdd, ranVertexYAdd = randint(0, w), randint(30, h - 30)
+    ranStartXAdd, ranStartYAdd = randint(35, w-35), h - 20
+    ranVertexXAdd, ranVertexYAdd = randint(30, w), randint(30, h - 30)
     img = pygame.image.load('ClassicPotato-1.png')
     return img, (ranStartXAdd, ranStartYAdd), (ranVertexXAdd, ranVertexYAdd)
 
