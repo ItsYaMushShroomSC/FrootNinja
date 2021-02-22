@@ -58,8 +58,7 @@ openScreenRects = []  # stores rectangles of the opening screen
 gameMode = None  # when is gameMode is none, start screen appears
 gameScreenRect = None
 
-resizeGameScreenRect = None
-oldFactorLength = 1
+resizeFactor = 1
 
 rootGroup = pygame.sprite.Group()
 
@@ -68,33 +67,26 @@ rootGroup = pygame.sprite.Group()
 class Fruit(pygame.sprite.Sprite):
    def __init__(self, images, startPosAdd, vertexPosAdd):
        pygame.sprite.Sprite.__init__(self)
-       global resizeGameScreenRect
-
-       self.refImages = images
+       global resizeFactor
 
        self.images = images  # the fruit images, an array with animation images in order, last image is explode img
        self.image = images[0]  # self.image is from the Sprite class
        self.imgIndex = 0
        self.rect = self.image.get_rect()  # from the Sprite class
-       self.curPosAddX, self.curPosAddY = startPosAdd
-       self.vertexPosAddX, self.vertexPosAddY = vertexPosAdd
-       self.startXPos, self.startYPos = gameScreenRect.left + self.curPosAddX, gameScreenRect.top + self.curPosAddY
+       self.startXPos, self.startYPos = gameScreenRect.left + startPosAdd[0], gameScreenRect.top + startPosAdd[1]
        self.vertexXPos, self.vertexYPos = gameScreenRect.left + vertexPosAdd[0], gameScreenRect.top + vertexPosAdd[1]
        self.curPosX, self.curPosY = self.startXPos, self.startYPos
-       #self.setImgPos()
+       self.setImgPos()
        self.speedX, self.speedY = 5, 5
        self.movesDone = 0
        self.hasBeenSliced = False
        self.withCombo = False  # boolean that means if False then the Fruit isn't to be added to the combo num
+
+       for i, img in enumerate(self.images):
+           curW, curH = img.get_rect().w, img.get_rect().h
+           self.images[i] = pygame.transform.smoothscale(img.convert_alpha(), (int(curW * resizeFactor), int(curH * resizeFactor)))
+
        self.image = self.images[self.imgIndex]
-
-       if not resizeGameScreenRect == None:
-           self.resizeImg(resizeGameScreenRect, True)
-
-
-       self.image = self.images[self.imgIndex]
-       self.setImgPos()
-
 
    def setImgPos(self):
        self.rect.center = int(self.curPosX), int(self.curPosY)
@@ -132,10 +124,8 @@ class Fruit(pygame.sprite.Sprite):
            self.rect.center = (centerX + self.speedX, centerY + self.speedY)
 
        # add more
-
-   def resizeImg(self, oldGameScreenRect, isSpawn):  # resize image to screen size dimensions
-       global resizeGameScreenRect, oldFactorLength
-
+   def resizeImg(self, oldGameScreenRect): # resize image to screen size dimensions
+       global resizeFactor
 
        factorLengthX = gameScreenRect.w / oldGameScreenRect.w
        factorLengthY = gameScreenRect.h / oldGameScreenRect.h
@@ -146,18 +136,16 @@ class Fruit(pygame.sprite.Sprite):
        else:
            factorLength = factorLengthY
 
-       resizeGameScreenRect = oldGameScreenRect
-       oldFactorLength = factorLength
-
-       if isSpawn == True:
-           factorLength = gameScreenRect.w/480
+       #Factor = factorLength * resizeFactor
 
        for i, img in enumerate(self.images):
            curW, curH = img.get_rect().w, img.get_rect().h
            self.images[i] = pygame.transform.smoothscale(img, (int(curW * factorLength), int(curH * factorLength)))
 
        self.image = self.images[self.imgIndex]
-       self.setImgPos()
+       self.rect = self.image.get_rect()
+       self.rect.center = self.curPosX, self.curPosY
+
 
    def drawFruit(self):
        pass
@@ -190,18 +178,10 @@ class Bomb():
 #def drawRoots():
 
 def reconfigAllRootsPosAndSize(oldGameScreenRect):
-    global resizeFactor
-
     for root in rootGroup:
-        root.resizeImg(oldGameScreenRect, False)
-        root.curPosAddX, root.curPosAddY = reconfigFruitPos(root.curPosAddX, root.curPosAddY, oldGameScreenRect)
-        root.curPosX, root.curPosY = gameScreenRect.left + root.curPosAddX, gameScreenRect.top + root.curPosAddY
-        root.startXPos, root.startYPos = reconfigFruitPos(root.startXPos, root.startYPos, oldGameScreenRect)
-        #root.setImgPos()
-        root.vertexPosAddX, root.vertexPosAddY = reconfigFruitPos(root.vertexPosAddX, root.vertexPosAddY, oldGameScreenRect)
-        root.vertexXPos, root.vertexYPos = gameScreenRect.left + root.vertexPosAddX, gameScreenRect.top + root.vertexPosAddY
+        root.resizeImg(oldGameScreenRect)
+        root.curPosX, root.curPosY = reconfigFruitPos(root.curPosX, root.curPosY, oldGameScreenRect)
         root.setImgPos()
-
 
 def addNewRanRoot():
     images = None
@@ -263,16 +243,15 @@ def addNewRanRoot():
 
     img, (startX, startY), (vertexX, vertexY) = getRanStartAndVertexPos()
     left, top = gameScreenRect.topleft
-    rootGroup.add(Fruit(images, (startX, startY), (vertexX, vertexY)))
+    rootGroup.add(Fruit(images, (startX + left, startY + top), (startX + vertexX, startY + vertexY)))
 
 def reconfigFruitPos(posX, posY, oldGameScreenRect): # scales the positions of coordinates appropriately when screen size changes
-    global gameScreenRect, resizeGameScreenRect
+    global gameScreenRect
 
     factorLengthX = gameScreenRect.w/oldGameScreenRect.w
     factorLengthY = gameScreenRect.h/oldGameScreenRect.h
     #print(factorLengthY)
     #print(factorLengthX)
-    resizeGameScreenRect = oldGameScreenRect
     newPosX, newPosY = factorLengthX*posX, factorLengthY*posY
     return newPosX, newPosY
 
@@ -282,14 +261,14 @@ def getRanStartAndVertexPos():
     left, top = gameScreenRect.topleft
     left, bottom = gameScreenRect.bottomleft
     w, h = gameScreenRect.w, gameScreenRect.h
-    ranStartXAdd, ranStartYAdd = randint(35, w-35), h - 35
+    ranStartXAdd, ranStartYAdd = randint(35, w-35), h - 20
     ranVertexXAdd, ranVertexYAdd = randint(30, w), randint(30, h - 30)
     img = pygame.image.load('ClassicPotato-1.png')
     return img, (ranStartXAdd, ranStartYAdd), (ranVertexXAdd, ranVertexYAdd)
 
 def redrawScreen():
     DISPLAYSURF.fill(BLACK)
-    drawScreenArea(True)
+    drawScreenArea()
 
 def getFactorLength():
    factorLength = windowWidth
@@ -319,7 +298,7 @@ def getCursorSpeedIsFast(initialMousePos, curMousePos): # every 200 milliseconds
    else:
        return False
 
-def drawScreenArea(booDraw):
+def drawScreenArea():
    global gameScreenRect
 
    gameScreenRect = None
@@ -333,8 +312,7 @@ def drawScreenArea(booDraw):
    gameScreenRect = img.get_rect()
    gameScreenRect.center = (int(windowWidth / 2), int(windowHeight / 2))
    left, top = gameScreenRect.topleft
-   if booDraw == True:
-    DISPLAYSURF.blit(img, (left, top))
+   DISPLAYSURF.blit(img, (left, top))
 
 def determineMode(position):
    global DISPLAYSURF
@@ -395,7 +373,7 @@ def main():
    titleBool = True
    initMousePosX, initMousePosY = pygame.mouse.get_pos()
    pygame.mouse.set_cursor(*pygame.cursors.broken_x)
-   drawScreenArea(False)
+   drawScreenArea()
    img, (startX, starty), (vertexX, vertexY) = getRanStartAndVertexPos()
    oldGameScreenRect = None
 
@@ -447,7 +425,6 @@ def main():
                    redrawScreen()
                    startX, starty = reconfigFruitPos(startX, starty, oldGameScreenRect)
                    reconfigAllRootsPosAndSize(oldGameScreenRect)
-                   oldGameScreenRect = gameScreenRect
 
            if event.type == my_eventTime and pygame.mouse.get_pressed()[0]:
                pygame.draw.aaline(DISPLAYSURF, RED, (initMousePosX, initMousePosY), (pygame.mouse.get_pos()), 6)
@@ -466,10 +443,3 @@ def main():
 # RUN MAIN
 if __name__ == '__main__':
    main()
-
-
-
-
-
-
-
