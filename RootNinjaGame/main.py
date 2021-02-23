@@ -81,8 +81,9 @@ class Fruit(pygame.sprite.Sprite):
        self.startXPos, self.startYPos = gameScreenRect.left + self.curPosAddX, gameScreenRect.top + self.curPosAddY
        self.vertexXPos, self.vertexYPos = gameScreenRect.left + vertexPosAdd[0], gameScreenRect.top + vertexPosAdd[1]
        self.curPosX, self.curPosY = self.startXPos, self.startYPos
-       #self.setImgPos()
-       self.speedX, self.speedY = 5, 5
+       self.reachedVertex = False
+       self.speedX, self.speedY = 5, -5
+       self.setNewSpeed()
        self.movesDone = 0
        self.hasBeenSliced = False
        self.withCombo = False  # boolean that means if False then the Fruit isn't to be added to the combo num
@@ -95,6 +96,11 @@ class Fruit(pygame.sprite.Sprite):
        self.image = self.images[self.imgIndex]
        self.setImgPos()
 
+   def checkShouldRemoveRoot(self): # returns true means remove fruit
+       if self.curPosX < 0 or self.curPosX > windowWidth or self.curPosY < 0 or self.curPosY > windowHeight:
+           return True
+       else:
+           return False
 
    def setImgPos(self):
        self.rect.center = int(self.curPosX), int(self.curPosY)
@@ -107,29 +113,41 @@ class Fruit(pygame.sprite.Sprite):
            self.endXPos, self.endYPos = self.startXPos - int(2 * (self.startXPos - self.vertexXPos)), self.startYPos
 
        xDif = self.vertexXPos - self.startXPos
-       yDif = self.vertexXPos - self.startXPos
+       yDif = self.vertexYPos - self.startYPos
+
+       #print(str(self.curPosY))
+       #print(str(self.vertexYPos))
+
+       if self.curPosY <= self.vertexYPos or self.reachedVertex == True:
+           self.reachedVertex = True
+           xDif = self.endXPos - self.vertexXPos
+           yDif = self.endYPos - self.vertexYPos
+           print('hi')
 
        slantLength = math.sqrt(xDif*xDif + yDif*yDif)
 
-       factor = getFactorLength()
+       factor = gameScreenRect.w / 480
 
-       self.speedX = xDif * (20*factor/slantLength)
-       self.speedY = yDif * (20*factor/slantLength)
+       self.speedX = xDif * (30*factor/slantLength)
+       self.speedY = yDif * (30*factor/slantLength)
+
 
    def moveFruit(self):  # each time the fruit moves a certain distance, the image should change so the fruit is rotating
-       self.moveDone += 1
+       self.movesDone += 1
+
+       self.setNewSpeed()
+
        if self.movesDone >= 4:
            self.image = self.images[self.imgIndex + 1]
 
-           if self.imgIndex == 3:
-               self.imgIndex = 0
-           else:
-               self.imgIndex += 1
+       if self.imgIndex == 2:
+           self.imgIndex = 0
+       else:
+           self.imgIndex += 1
 
-           self.image = self.images[self.imgIndex]
-           self.rect = self.image.get_rect()
-           centerX, centerY = self.rect.centerx, self.rect.centery
-           self.rect.center = (centerX + self.speedX, centerY + self.speedY)
+       self.image = self.images[self.imgIndex]
+       self.curPosX, self.curPosY = self.curPosX + self.speedX, self.curPosY + self.speedY
+       self.setImgPos()
 
        # add more
 
@@ -187,7 +205,24 @@ class Bomb():
 
 
 # GLOBAL METHODS
-#def drawRoots():
+
+def drawBlackOutsideOfGSR(): # GSR = gameScreenRect
+    right = gameScreenRect.right
+    bottom = gameScreenRect.bottom
+
+    pygame.draw.rect(DISPLAYSURF, BLACK, (0, 0, gameScreenRect.left, windowHeight))
+    pygame.draw.rect(DISPLAYSURF, BLACK, (0, 0, windowWidth, gameScreenRect.top))
+    pygame.draw.rect(DISPLAYSURF, BLACK, (right, 0, gameScreenRect.left, windowHeight))
+    pygame.draw.rect(DISPLAYSURF, BLACK, (0, bottom, windowWidth, gameScreenRect.top))
+
+def removeRoots():
+    for root in rootGroup:
+        if root.checkShouldRemoveRoot() == True:
+            rootGroup.remove(root)
+
+def moveAllRoots():
+    for root in rootGroup:
+        root.moveFruit()
 
 def reconfigAllRootsPosAndSize(oldGameScreenRect):
     global resizeFactor
@@ -396,7 +431,6 @@ def main():
    initMousePosX, initMousePosY = pygame.mouse.get_pos()
    pygame.mouse.set_cursor(*pygame.cursors.broken_x)
    drawScreenArea(False)
-   img, (startX, starty), (vertexX, vertexY) = getRanStartAndVertexPos()
    oldGameScreenRect = None
 
    fruitSpawnTimer = 2000 # when fruitSpawnTimer time has elapsed, a new fruit should spawn
@@ -413,17 +447,15 @@ def main():
            if gameMode == 'TIMER' and event.type == my_eventTime:
                redrawScreen()
                oldGameScreenRect = gameScreenRect
-
+               removeRoots()
+               moveAllRoots()
                rootGroup.draw(DISPLAYSURF) # draws the roots
                rootGroup.update()
-
-               imgRect = img.get_rect()
-               imgRect.center = int(gameScreenRect.left + startX), int(gameScreenRect.top + starty)
-               DISPLAYSURF.blit(img, imgRect)
+               drawBlackOutsideOfGSR()
 
            if gameMode == 'TIMER' and pygame.time.get_ticks() - startTics >= fruitSpawnTimer:
                startTics = pygame.time.get_ticks()
-               fruitSpawnTimer = randint(400, 4000)
+               fruitSpawnTimer = randint(100, 4000)
                addNewRanRoot()
 
            if gameMode == None and event.type == pygame.MOUSEBUTTONUP:
@@ -433,9 +465,6 @@ def main():
            if event.type == my_eventTime and gameMode == None:
                titleBool = not titleBool
                openingScreen(titleBool)
-               imgRect = img.get_rect()
-               imgRect.center = gameScreenRect.left + startX, gameScreenRect.top + starty
-               DISPLAYSURF.blit(img, imgRect)
 
            if event.type == QUIT:
                terminate()
@@ -445,7 +474,6 @@ def main():
                windowWidth, windowHeight, = event.w, event.h
                if not gameMode == None:
                    redrawScreen()
-                   startX, starty = reconfigFruitPos(startX, starty, oldGameScreenRect)
                    reconfigAllRootsPosAndSize(oldGameScreenRect)
                    oldGameScreenRect = gameScreenRect
 
