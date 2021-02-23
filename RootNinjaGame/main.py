@@ -96,6 +96,10 @@ class Fruit(pygame.sprite.Sprite):
        self.image = self.images[self.imgIndex]
        self.setImgPos()
 
+   def checkHasBeenSliced(self):
+       if self.hasBeenSliced == True:
+           self.image = self.images[4]
+
    def checkShouldRemoveRoot(self): # returns true means remove fruit
        if self.curPosX < 0 or self.curPosX > windowWidth or self.curPosY < 0 or self.curPosY > windowHeight:
            return True
@@ -128,8 +132,8 @@ class Fruit(pygame.sprite.Sprite):
 
        factor = gameScreenRect.w / 480
 
-       self.speedX = xDif * (30*factor/slantLength)
-       self.speedY = yDif * (30*factor/slantLength)
+       self.speedX = xDif * (40*factor/slantLength)
+       self.speedY = yDif * (40*factor/slantLength)
 
 
    def moveFruit(self):  # each time the fruit moves a certain distance, the image should change so the fruit is rotating
@@ -137,13 +141,15 @@ class Fruit(pygame.sprite.Sprite):
 
        self.setNewSpeed()
 
-       if self.movesDone >= 4:
-           self.image = self.images[self.imgIndex + 1]
-
-       if self.imgIndex == 2:
+       if self.imgIndex == 3:
            self.imgIndex = 0
        else:
            self.imgIndex += 1
+
+       if self.movesDone >= 3:
+           if not self.imgIndex == 3:
+               self.movesDone = 0
+               self.image = self.images[self.imgIndex + 1]
 
        self.image = self.images[self.imgIndex]
        self.curPosX, self.curPosY = self.curPosX + self.speedX, self.curPosY + self.speedY
@@ -246,7 +252,8 @@ def addNewRanRoot():
         img2 = pygame.image.load('ClassicPotato-2.png')
         img3 = pygame.image.load('ClassicPotato-3.png')
         img4 = pygame.image.load('ClassicPotato-4.png')
-        images = [img1, img2, img3, img4]
+        img5 = pygame.image.load('ClassicPotatoSlice.png.png')
+        images = [img1, img2, img3, img4, img5]
     if randy == 1:
         img1 = pygame.image.load('Carrot-1.png.png')
         img2 = pygame.image.load('Carrot-2.png.png')
@@ -318,7 +325,7 @@ def getRanStartAndVertexPos():
     left, bottom = gameScreenRect.bottomleft
     w, h = gameScreenRect.w, gameScreenRect.h
     ranStartXAdd, ranStartYAdd = randint(35, w-35), h - 35
-    ranVertexXAdd, ranVertexYAdd = randint(30, w), randint(30, h - 30)
+    ranVertexXAdd, ranVertexYAdd = randint(30, h-30), randint(30, h - 60)
     img = pygame.image.load('ClassicPotato-1.png')
     return img, (ranStartXAdd, ranStartYAdd), (ranVertexXAdd, ranVertexYAdd)
 
