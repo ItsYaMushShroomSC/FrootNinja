@@ -70,8 +70,6 @@ class Fruit(pygame.sprite.Sprite):
        pygame.sprite.Sprite.__init__(self)
        global resizeGameScreenRect
 
-       self.refImages = images
-
        self.images = images  # the fruit images, an array with animation images in order, last image is explode img
        self.image = images[0]  # self.image is from the Sprite class
        self.imgIndex = 0
@@ -95,6 +93,12 @@ class Fruit(pygame.sprite.Sprite):
 
        self.image = self.images[self.imgIndex]
        self.setImgPos()
+
+       self.mask = pygame.mask.from_surface(self.image)
+       self.setMask()
+
+   def setMask(self):
+       self.mask = pygame.mask.from_surface(self.image)
 
    def checkHasBeenSliced(self):
        if self.hasBeenSliced == True:
@@ -211,6 +215,12 @@ class Bomb():
 
 
 # GLOBAL METHODS
+def checkRootPerimeterCollision(collidedRoot): # cdRoot is passed in as the root that the mouse is going over holding mouse down on
+    pass
+    # https://stackoverflow.com/questions/45389563/how-to-get-coordinates-area-of-collision-in-pygame
+    # https://www.youtube.com/watch?v=Dspz3kaTKUg
+    #for root in rootGroup:
+        #if root.
 
 def drawBlackOutsideOfGSR(): # GSR = gameScreenRect
     right = gameScreenRect.right
