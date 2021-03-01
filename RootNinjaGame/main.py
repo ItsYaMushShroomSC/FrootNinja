@@ -83,6 +83,7 @@ class Fruit(pygame.sprite.Sprite):
        self.speedX, self.speedY = 5, -5
        self.setNewSpeed()
        self.movesDone = 0
+       self.sliceImgTime = 0
        self.hasBeenSliced = False
        self.withCombo = False  # boolean that means if False then the Fruit isn't to be added to the combo num
        self.image = self.images[self.imgIndex]
@@ -95,7 +96,7 @@ class Fruit(pygame.sprite.Sprite):
        self.setImgPos()
 
        self.mask = pygame.mask.from_surface(self.image)
-       self.setMask()
+       #self.setMask()
 
    def setMask(self):
        self.mask = pygame.mask.from_surface(self.image)
@@ -103,9 +104,12 @@ class Fruit(pygame.sprite.Sprite):
    def checkHasBeenSliced(self):
        if self.hasBeenSliced == True:
            self.image = self.images[4]
+           self.sliceImgTime += 1;
 
    def checkShouldRemoveRoot(self): # returns true means remove fruit
-       if self.curPosX < 0 or self.curPosX > windowWidth or self.curPosY < 0 or self.curPosY > windowHeight:
+       if self.hasBeenSliced == True and self.sliceImgTime >= 5:
+           return True
+       elif self.curPosX < 0 or self.curPosX > windowWidth or self.curPosY < 0 or self.curPosY > windowHeight:
            return True
        else:
            return False
@@ -130,7 +134,7 @@ class Fruit(pygame.sprite.Sprite):
            self.reachedVertex = True
            xDif = self.endXPos - self.vertexXPos
            yDif = self.endYPos - self.vertexYPos
-           print('hi')
+           #print('hi')
 
        slantLength = math.sqrt(xDif*xDif + yDif*yDif)
 
@@ -158,7 +162,8 @@ class Fruit(pygame.sprite.Sprite):
        self.image = self.images[self.imgIndex]
        self.curPosX, self.curPosY = self.curPosX + self.speedX, self.curPosY + self.speedY
        self.setImgPos()
-
+       self.setMask()
+       self.checkHasBeenSliced()
        # add more
 
    def resizeImg(self, oldGameScreenRect, isSpawn):  # resize image to screen size dimensions
@@ -215,6 +220,42 @@ class Bomb():
 
 
 # GLOBAL METHODS
+def getLinePoints(initPosX, initPosY, curPosX, curPosY):
+    linePointAry = []
+    #y=(Ay-By)/(Ax-Bx)*(x-Ax)+Ay
+    start, end = None, None
+
+    if initPosX >= curPosX:
+        start = curPosX
+        end = initPosX
+    else:
+        start = initPosX
+        end = curPosX
+    for x in range(start, end+1):
+        if not initPosX-curPosX == 0:
+            y = (initPosY-curPosY)/(initPosX-curPosX) * (x - initPosX) + initPosY
+            linePointAry.append((x, y))
+
+    return linePointAry
+
+def checkMouseRootCollide(initPosX, initPosY, curPos):
+    curPosX, curPosY = curPos
+    for root in rootGroup:
+        linePointAry = getLinePoints(initPosX, initPosY, curPosX, curPosY)
+
+        for point in linePointAry:
+            pointX, pointY = point
+
+            if root.rect.collidepoint((pointX, pointY)):
+                root.hasBeenSliced = True
+                print("poo")
+
+
+def getSlicedRoots(lineRect, collidedRoots):
+    for cRoot in collidedRoots:
+        collidePoint = pygame.sprite.collide_mask(lineRect, cRoot)
+        cRoot.hasBeenSliced = True
+
 def checkRootPerimeterCollision(collidedRoot): # cdRoot is passed in as the root that the mouse is going over holding mouse down on
     pass
     # https://stackoverflow.com/questions/45389563/how-to-get-coordinates-area-of-collision-in-pygame
@@ -262,56 +303,64 @@ def addNewRanRoot():
         img2 = pygame.image.load('ClassicPotato-2.png')
         img3 = pygame.image.load('ClassicPotato-3.png')
         img4 = pygame.image.load('ClassicPotato-4.png')
-        img5 = pygame.image.load('ClassicPotatoSlice.png.png')
+        img5 = pygame.image.load('ClassicPotato-7.png.png')
         images = [img1, img2, img3, img4, img5]
     if randy == 1:
         img1 = pygame.image.load('Carrot-1.png.png')
         img2 = pygame.image.load('Carrot-2.png.png')
         img3 = pygame.image.load('Carrot-3.png.png')
         img4 = pygame.image.load('Carrot-4.png.png')
-        images = [img1, img2, img3, img4]
+        img5 = pygame.image.load('Carrot-7.png.png')
+        images = [img1, img2, img3, img4, img5]
     if randy == 2:
         img1 = pygame.image.load('Garlic-1.png.png')
         img2 = pygame.image.load('Garlic-2.png.png')
         img3 = pygame.image.load('Garlic-3.png.png')
         img4 = pygame.image.load('Garlic-4.png.png')
-        images = [img1, img2, img3, img4]
+        img5 = pygame.image.load('Garlic-6.png.png')
+        images = [img1, img2, img3, img4, img5]
     if randy == 3:
         img1 = pygame.image.load('PurpleVitelottePotato-1.png.png')
         img2 = pygame.image.load('PurpleVitelottePotato-2.png.png')
         img3 = pygame.image.load('PurpleVitelottePotato-3.png.png')
         img4 = pygame.image.load('PurpleVitelottePotato-4.png.png')
-        images = [img1, img2, img3, img4]
+        img5 = pygame.image.load('PurpleVitelottePotato-6.png.png')
+        images = [img1, img2, img3, img4, img5]
     if randy == 4:
         img1 = pygame.image.load('Radish-1.png.png')
         img2 = pygame.image.load('Radish-2.png.png')
         img3 = pygame.image.load('Radish-3.png.png')
         img4 = pygame.image.load('Radish-4.png.png')
-        images = [img1, img2, img3, img4]
+        img5 = pygame.image.load('Radish-8.png.png')
+        images = [img1, img2, img3, img4, img5]
     if randy == 5:
         img1 = pygame.image.load('RedLauraPotato-1.png.png')
         img2 = pygame.image.load('RedLauraPotato-2.png.png')
         img3 = pygame.image.load('RedLauraPotato-3.png.png')
         img4 = pygame.image.load('RedLauraPotato-4.png.png')
-        images = [img1, img2, img3, img4]
+        img5 = pygame.image.load('RedLauraPotato-7.png.png')
+        images = [img1, img2, img3, img4, img5]
     if randy == 6:
         img1 = pygame.image.load('SweetPotato-1.png.png')
         img2 = pygame.image.load('SweetPotato-2.png.png')
         img3 = pygame.image.load('SweetPotato-3.png.png')
         img4 = pygame.image.load('SweetPotato-4.png.png')
-        images = [img1, img2, img3, img4]
+        img5 = pygame.image.load('SweetPotato-5.png.png')
+        images = [img1, img2, img3, img4, img5]
     if randy == 7:
         img1 = pygame.image.load('Turnip-1.png.png')
         img2 = pygame.image.load('Turnip-2.png.png')
         img3 = pygame.image.load('Turnip-3.png.png')
         img4 = pygame.image.load('Turnip-4.png.png')
-        images = [img1, img2, img3, img4]
+        img5 = pygame.image.load('Turnip-10.png.png')
+        images = [img1, img2, img3, img4, img5]
     if randy == 8:
         img1 = pygame.image.load('YukonGoldPotato-1.png.png')
         img2 = pygame.image.load('YukonGoldPotato-2.png.png')
         img3 = pygame.image.load('YukonGoldPotato-3.png.png')
         img4 = pygame.image.load('YukonGoldPotato-4.png.png')
-        images = [img1, img2, img3, img4]
+        img5 = pygame.image.load('YukonGoldPotato-7.png.png')
+        images = [img1, img2, img3, img4, img5]
 
     img, (startX, startY), (vertexX, vertexY) = getRanStartAndVertexPos()
     left, top = gameScreenRect.topleft
@@ -450,6 +499,8 @@ def main():
    drawScreenArea(False)
    oldGameScreenRect = None
 
+   collideLine = None
+
    fruitSpawnTimer = 2000 # when fruitSpawnTimer time has elapsed, a new fruit should spawn
    startTics = pygame.time.get_ticks()
 
@@ -496,7 +547,18 @@ def main():
 
            if event.type == my_eventTime and pygame.mouse.get_pressed()[0]:
                pygame.draw.aaline(DISPLAYSURF, RED, (initMousePosX, initMousePosY), (pygame.mouse.get_pos()), 6)
-               isFast = getCursorSpeedIsFast((initMousePosX, initMousePosY), pygame.mouse.get_pos())
+               #collideLine = pygame.draw.aaline(DISPLAYSURF, RED, (initMousePosX, initMousePosY), (pygame.mouse.get_pos()), 6)
+               #collideLineRect = pygame.sprite.Sprite(collideLine)
+               #collideRectGroup = pygame.sprite.Group(collideLineRect)
+
+               #if pygame.sprite.spritecollide(collideLineRect, rootGroup, False):
+                   #getSlicedRoots(pygame.sprite.spritecollide(collideLineRect, rootGroup, False))
+               curPos = pygame.mouse.get_pos()
+
+               isFast = getCursorSpeedIsFast((initMousePosX, initMousePosY), curPos)
+               if isFast == True:
+                   checkMouseRootCollide(initMousePosX, initMousePosY, curPos)
+
                initMousePosX, initMousePosY = pygame.mouse.get_pos()
                #print(str(isFast))
 
