@@ -53,6 +53,7 @@ GREY = (128, 128, 128)
 
 # Global Variables
 
+isFast = False
 
 openScreenRects = []  # stores rectangles of the opening screen
 gameMode = None  # when is gameMode is none, start screen appears
@@ -62,6 +63,9 @@ resizeGameScreenRect = None
 oldFactorLength = 1
 
 rootGroup = pygame.sprite.Group()
+
+score = 0
+livesLeft = 3
 
 # CLASSES
 
@@ -102,12 +106,20 @@ class Fruit(pygame.sprite.Sprite):
        self.mask = pygame.mask.from_surface(self.image)
 
    def checkHasBeenSliced(self):
+       global score, isFast
+
        if self.hasBeenSliced == True:
+           if self.sliceImgTime == 0:
+               score += 10
+               if isFast == True:
+                   self.withCombo = True
+
            self.image = self.images[4]
            self.sliceImgTime += 1;
 
    def checkShouldRemoveRoot(self): # returns true means remove fruit
        if self.hasBeenSliced == True and self.sliceImgTime >= 5:
+           #pointSpriteGroup.add()
            return True
        elif self.curPosX < 0 or self.curPosX > windowWidth or self.curPosY < 0 or self.curPosY > windowHeight:
            return True
@@ -198,7 +210,6 @@ class Fruit(pygame.sprite.Sprite):
    def drawExplodeFruit(self):  # draws the fruit when it's been cut
        pass
 
-
 class Bomb():
 
    def __init__(self, hitboxRect, startPos, endPos):
@@ -220,6 +231,32 @@ class Bomb():
 
 
 # GLOBAL METHODS
+def checkComboPoints():
+    global score
+
+    numCombos = 0
+    for root in rootGroup:
+        if root.withCombo == True:
+            numCombos += 1
+            root.withCombo = False
+            posX, posY = root.curPosX, root.curPosY
+
+    if numCombos > 1:
+        score += numCombos
+        openingFONT = pygame.font.SysFont('chiller', int(gameScreenRect.w / 480 * 30))
+        textSurface = openingFONT.render('Score: ' + str(score), True, BLACK, GREY)
+        textRect = textSurface.get_rect()
+        textRect.center = (posX, posY)
+        DISPLAYSURF.blit(textSurface, textRect)
+
+def drawScore():
+    global score
+    openingFONT = pygame.font.SysFont('chiller', int(gameScreenRect.w/480 * 30))
+    textSurface = openingFONT.render('Score: ' + str(score), True, BLACK, GREY)
+    textRect = textSurface.get_rect()
+    textRect.center = (int(windowWidth / 2), int(windowHeight / 12))
+    DISPLAYSURF.blit(textSurface, textRect)
+
 def getLinePoints(initPosX, initPosY, curPosX, curPosY):
     linePointAry = []
     #y=(Ay-By)/(Ax-Bx)*(x-Ax)+Ay
@@ -256,13 +293,6 @@ def getSlicedRoots(lineRect, collidedRoots):
         collidePoint = pygame.sprite.collide_mask(lineRect, cRoot)
         cRoot.hasBeenSliced = True
 
-def checkRootPerimeterCollision(collidedRoot): # cdRoot is passed in as the root that the mouse is going over holding mouse down on
-    pass
-    # https://stackoverflow.com/questions/45389563/how-to-get-coordinates-area-of-collision-in-pygame
-    # https://www.youtube.com/watch?v=Dspz3kaTKUg
-    #for root in rootGroup:
-        #if root.
-
 def drawBlackOutsideOfGSR(): # GSR = gameScreenRect
     right = gameScreenRect.right
     bottom = gameScreenRect.bottom
@@ -284,7 +314,10 @@ def moveAllRoots():
 def reconfigAllRootsPosAndSize(oldGameScreenRect):
     global resizeFactor
 
-    for root in rootGroup:
+    rooty = addNewRanRoot()
+    rootGroup.add(rooty)
+
+    for i, root in enumerate(rootGroup):
         root.resizeImg(oldGameScreenRect, False)
         root.curPosAddX, root.curPosAddY = reconfigFruitPos(root.curPosAddX, root.curPosAddY, oldGameScreenRect)
         root.curPosX, root.curPosY = gameScreenRect.left + root.curPosAddX, gameScreenRect.top + root.curPosAddY
@@ -293,6 +326,8 @@ def reconfigAllRootsPosAndSize(oldGameScreenRect):
         root.vertexPosAddX, root.vertexPosAddY = reconfigFruitPos(root.vertexPosAddX, root.vertexPosAddY, oldGameScreenRect)
         root.vertexXPos, root.vertexYPos = gameScreenRect.left + root.vertexPosAddX, gameScreenRect.top + root.vertexPosAddY
         root.setImgPos()
+
+        rooty.kill()
 
 
 def addNewRanRoot():
@@ -364,7 +399,7 @@ def addNewRanRoot():
 
     img, (startX, startY), (vertexX, vertexY) = getRanStartAndVertexPos()
     left, top = gameScreenRect.topleft
-    rootGroup.add(Fruit(images, (startX, startY), (vertexX, vertexY)))
+    return Fruit(images, (startX, startY), (vertexX, vertexY))
 
 def reconfigFruitPos(posX, posY, oldGameScreenRect): # scales the positions of coordinates appropriately when screen size changes
     global gameScreenRect, resizeGameScreenRect
@@ -415,7 +450,7 @@ def getCursorSpeedIsFast(initialMousePos, curMousePos): # every 200 milliseconds
    yDif = abs(yCur - yInitial)
    distance = math.sqrt(xDif*xDif + yDif*yDif)
    cursorSpeed = distance, 200 # cursor speed is distance/200 millaseconds
-   if distance > 200:
+   if distance > 185:
        return True
    else:
        return False
@@ -452,16 +487,16 @@ def determineMode(position):
 def openingScreen(bool):
    global DISPLAYSURF, openingFONT, windowWidth, windowHeight, openScreenRects, factor, rootGroup
    openScreenRects.clear();
-   color1 = RED
-   color2 = WATERMELON
+   color1 = GREY
+   color2 = BLACK
    factorW = windowWidth / 500
    factorH = windowHeight / 500
    factor = factorW
    if factorH <= factorW:
        factor = factorH
    if bool == True:
-       color1 = WATERMELON
-       color2 = RED
+       color1 = BLACK
+       color2 = GREY
 
    openingFONT = pygame.font.SysFont('chiller', int(factor * 70))
    DISPLAYSURF.fill(BLACK)
@@ -469,7 +504,7 @@ def openingScreen(bool):
    textRect = textSurface.get_rect()
    textRect.center = (int(windowWidth / 2), int(windowHeight / 10))
    DISPLAYSURF.blit(textSurface, textRect)
-   textSurface = openingFONT.render('Timer Mode', True, RED, YELLOW)
+   textSurface = openingFONT.render('Timer Mode', True, (245,222,179), (139,69,19))
    textRect = textSurface.get_rect()
    openScreenRects.append((textRect))  # adds TIMER rect at index 0
    textRect.center = (int(windowWidth / 2), int(4 * windowHeight / 10))
@@ -487,7 +522,7 @@ def terminate():
 
 
 def main():
-   global DISPLAYSURF, windowWidth, windowHeight, gameMode
+   global DISPLAYSURF, windowWidth, windowHeight, gameMode, isFast
    my_eventTime = USEREVENT + 1
    pygame.time.set_timer(my_eventTime, 200)
    changeEventTime = True
@@ -515,6 +550,8 @@ def main():
            if gameMode == 'TIMER' and event.type == my_eventTime:
                redrawScreen()
                oldGameScreenRect = gameScreenRect
+               drawScore()
+               checkComboPoints()
                removeRoots()
                moveAllRoots()
                rootGroup.draw(DISPLAYSURF) # draws the roots
@@ -524,7 +561,7 @@ def main():
            if gameMode == 'TIMER' and pygame.time.get_ticks() - startTics >= fruitSpawnTimer:
                startTics = pygame.time.get_ticks()
                fruitSpawnTimer = randint(100, 4000)
-               addNewRanRoot()
+               rootGroup.add(addNewRanRoot())
 
            if gameMode == None and event.type == pygame.MOUSEBUTTONUP:
                gameMode = determineMode(pygame.mouse.get_pos())
@@ -547,12 +584,6 @@ def main():
 
            if event.type == my_eventTime and pygame.mouse.get_pressed()[0]:
                pygame.draw.aaline(DISPLAYSURF, RED, (initMousePosX, initMousePosY), (pygame.mouse.get_pos()), 6)
-               #collideLine = pygame.draw.aaline(DISPLAYSURF, RED, (initMousePosX, initMousePosY), (pygame.mouse.get_pos()), 6)
-               #collideLineRect = pygame.sprite.Sprite(collideLine)
-               #collideRectGroup = pygame.sprite.Group(collideLineRect)
-
-               #if pygame.sprite.spritecollide(collideLineRect, rootGroup, False):
-                   #getSlicedRoots(pygame.sprite.spritecollide(collideLineRect, rootGroup, False))
                curPos = pygame.mouse.get_pos()
 
                isFast = getCursorSpeedIsFast((initMousePosX, initMousePosY), curPos)
