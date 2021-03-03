@@ -92,9 +92,7 @@ class Fruit(pygame.sprite.Sprite):
        self.withCombo = False  # boolean that means if False then the Fruit isn't to be added to the combo num
        self.image = self.images[self.imgIndex]
 
-       if not resizeGameScreenRect == None:
-           self.resizeImg(resizeGameScreenRect, True)
-
+       self.resizeImg(resizeGameScreenRect, True)
 
        self.image = self.images[self.imgIndex]
        self.setImgPos()
@@ -181,18 +179,18 @@ class Fruit(pygame.sprite.Sprite):
    def resizeImg(self, oldGameScreenRect, isSpawn):  # resize image to screen size dimensions
        global resizeGameScreenRect, oldFactorLength
 
-
-       factorLengthX = gameScreenRect.w / oldGameScreenRect.w
-       factorLengthY = gameScreenRect.h / oldGameScreenRect.h
-       factorLength = factorLengthX
-
-       if factorLengthX < factorLengthY:
+       if oldGameScreenRect:
+           factorLengthX = gameScreenRect.w / oldGameScreenRect.w
+           factorLengthY = gameScreenRect.h / oldGameScreenRect.h
            factorLength = factorLengthX
-       else:
-           factorLength = factorLengthY
 
-       resizeGameScreenRect = oldGameScreenRect
-       oldFactorLength = factorLength
+           if factorLengthX < factorLengthY:
+               factorLength = factorLengthX
+           else:
+               factorLength = factorLengthY
+
+           resizeGameScreenRect = oldGameScreenRect
+           oldFactorLength = factorLength
 
        if isSpawn == True:
            factorLength = gameScreenRect.w/480
@@ -231,6 +229,31 @@ class Bomb():
 
 
 # GLOBAL METHODS
+
+def drawXLives():
+    global livesLeft
+    blackImg = pygame.image.load('BlackX.png')
+    redImg = pygame.image.load('RedX.png')
+    rect = blackImg.get_rect()
+    black = pygame.transform.smoothscale(blackImg, (int(rect.w * gameScreenRect.w/480), int(rect.h * gameScreenRect.w/480)))
+    red = pygame.transform.smoothscale(redImg, (int(rect.w * gameScreenRect.w/480), int(rect.h * gameScreenRect.w/480)))
+    x1, x2, x3 = black, black, black
+    if livesLeft <= 2:
+        x1 = red
+    if livesLeft <= 1:
+        x2 = red
+    if livesLeft <= 0:
+        x3 = red
+
+    rect = black.get_rect()
+
+    rect.center = (int(windowWidth / 2 + rect.w + 10), int(gameScreenRect.top + gameScreenRect.h / 12))
+    DISPLAYSURF.blit(x1, rect)
+    rect.center = (int(windowWidth / 2 + rect.w*2 + 10), int(gameScreenRect.top + gameScreenRect.h / 12))
+    DISPLAYSURF.blit(x2, rect)
+    rect.center = (int(windowWidth / 2 + rect.w*3 + 10), int(gameScreenRect.top + gameScreenRect.h / 12))
+    DISPLAYSURF.blit(x3, rect)
+
 def checkComboPoints():
     global score
 
@@ -303,8 +326,11 @@ def drawBlackOutsideOfGSR(): # GSR = gameScreenRect
     pygame.draw.rect(DISPLAYSURF, BLACK, (0, bottom, windowWidth, gameScreenRect.top))
 
 def removeRoots():
+    global livesLeft
     for root in rootGroup:
         if root.checkShouldRemoveRoot() == True:
+            if root.hasBeenSliced == False:
+                livesLeft -= 1
             rootGroup.remove(root)
 
 def moveAllRoots():
@@ -522,7 +548,7 @@ def terminate():
 
 
 def main():
-   global DISPLAYSURF, windowWidth, windowHeight, gameMode, isFast
+   global DISPLAYSURF, windowWidth, windowHeight, gameMode, isFast, score, livesLeft, rootGroup
    my_eventTime = USEREVENT + 1
    pygame.time.set_timer(my_eventTime, 200)
    changeEventTime = True
@@ -547,10 +573,22 @@ def main():
                pygame.time.set_timer(my_eventTime, 150)
                initMousePosX, initMousePosY = pygame.mouse.get_pos()
 
+           if livesLeft <= 0 and not gameMode == None:
+               drawXLives()
+               pygame.display.update()
+               pygame.time.wait(2000)
+               rootGroup = pygame.sprite.Group()
+               changeEventTime = True
+               gameMode = None
+               livesLeft = 3
+               score = 0
+               pygame.time.set_timer(my_eventTime, 200)
+
            if gameMode == 'TIMER' and event.type == my_eventTime:
                redrawScreen()
                oldGameScreenRect = gameScreenRect
                drawScore()
+               drawXLives()
                checkComboPoints()
                removeRoots()
                moveAllRoots()
@@ -560,7 +598,7 @@ def main():
 
            if gameMode == 'TIMER' and pygame.time.get_ticks() - startTics >= fruitSpawnTimer:
                startTics = pygame.time.get_ticks()
-               fruitSpawnTimer = randint(100, 4000)
+               fruitSpawnTimer = randint(80, 2000)
                rootGroup.add(addNewRanRoot())
 
            if gameMode == None and event.type == pygame.MOUSEBUTTONUP:
