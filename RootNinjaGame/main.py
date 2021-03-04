@@ -6,9 +6,6 @@ import pygame
 import sys
 from pygame.locals import *
 
-# import SpriteSheet
-from pygame.tests.test_utils import fixture_path
-
 pygame.init()
 
 # Constants
@@ -21,34 +18,14 @@ DISPLAYSURF = pygame.display.set_mode((windowWidth, windowHeight), pygame.RESIZA
 surfaceRect = DISPLAYSURF.get_rect()
 pygame.display.set_caption('Root Ninja')
 
-# Mouse variables
-mouseX, mouseY = None, None
-cursorSpeed = 0, 200
-MINBONUSSPEED = 100  # When the mouse moves faster than this speed, the fruit can give bonuses
-MINSLICESPEED = 100  # When the mouse moves faster than this speed, a fruit can be sliced
-comboBonusNum = 0
-
-# Fonts
-# openingFONT = pygame.font.Font('arial.ttf', 32)
-
 # Time
 FPS = 160
 FPSCLOCK = pygame.time.Clock()
-countdownTimer = 100, 000  # for the timed game mode
 
 # Colors
-BGCOLOR = (51, 153, 51)
-
-WATERMELON = (6, 165, 67)
 
 RED = (255, 0, 0)
-ORANGE = (255, 127, 0)
-YELLOW = (255, 255, 0)
-GREEN = (0, 255, 0)
-BLUE = (0, 0, 255)
-PURPLE = (75, 0, 130)
 BLACK = (0, 0, 0)
-WHITE = (255, 255, 255)
 GREY = (128, 128, 128)
 
 # Global Variables
@@ -56,7 +33,7 @@ GREY = (128, 128, 128)
 isFast = False
 
 openScreenRects = []  # stores rectangles of the opening screen
-gameMode = None  # when is gameMode is none, start screen appears
+gameStarted = False  # when is gameStarted is False, start screen appears
 gameScreenRect = None
 
 resizeGameScreenRect = None
@@ -98,7 +75,6 @@ class Fruit(pygame.sprite.Sprite):
        self.setImgPos()
 
        self.mask = pygame.mask.from_surface(self.image)
-       #self.setMask()
 
    def setMask(self):
        self.mask = pygame.mask.from_surface(self.image)
@@ -116,7 +92,7 @@ class Fruit(pygame.sprite.Sprite):
            self.sliceImgTime += 1;
 
    def checkShouldRemoveRoot(self): # returns true means remove fruit
-       if self.hasBeenSliced == True and self.sliceImgTime >= 5:
+       if self.hasBeenSliced == True and self.sliceImgTime >= 10:
            #pointSpriteGroup.add()
            return True
        elif self.curPosX < 0 or self.curPosX > windowWidth or self.curPosY < 0 or self.curPosY > windowHeight:
@@ -137,14 +113,10 @@ class Fruit(pygame.sprite.Sprite):
        xDif = self.vertexXPos - self.startXPos
        yDif = self.vertexYPos - self.startYPos
 
-       #print(str(self.curPosY))
-       #print(str(self.vertexYPos))
-
        if self.curPosY <= self.vertexYPos or self.reachedVertex == True:
            self.reachedVertex = True
            xDif = self.endXPos - self.vertexXPos
            yDif = self.endYPos - self.vertexYPos
-           #print('hi')
 
        slantLength = math.sqrt(xDif*xDif + yDif*yDif)
 
@@ -202,11 +174,6 @@ class Fruit(pygame.sprite.Sprite):
        self.image = self.images[self.imgIndex]
        self.setImgPos()
 
-   def drawFruit(self):
-       pass
-
-   def drawExplodeFruit(self):  # draws the fruit when it's been cut
-       pass
 
 class Bomb():
 
@@ -267,7 +234,7 @@ def checkComboPoints():
     if numCombos > 1:
         score += numCombos
         openingFONT = pygame.font.SysFont('chiller', int(gameScreenRect.w / 480 * 30))
-        textSurface = openingFONT.render('Score: ' + str(score), True, BLACK, GREY)
+        textSurface = openingFONT.render('+++ ' + str(numCombos), True, BLACK, GREY)
         textRect = textSurface.get_rect()
         textRect.center = (posX, posY)
         DISPLAYSURF.blit(textSurface, textRect)
@@ -283,6 +250,7 @@ def drawScore():
 def getLinePoints(initPosX, initPosY, curPosX, curPosY):
     linePointAry = []
     #y=(Ay-By)/(Ax-Bx)*(x-Ax)+Ay
+
     start, end = None, None
 
     if initPosX >= curPosX:
@@ -503,12 +471,9 @@ def determineMode(position):
    xPos, yPos = position
    if openScreenRects[0].collidepoint(xPos, yPos):
        DISPLAYSURF.fill(BLACK)
-       return "TIMER"
-   elif openScreenRects[1].collidepoint(xPos, yPos):
-       DISPLAYSURF.fill(BLACK)
-       return "3STRIKES"
+       return True
    else:
-       return None
+       return False
 
 def openingScreen(bool):
    global DISPLAYSURF, openingFONT, windowWidth, windowHeight, openScreenRects, factor, rootGroup
@@ -524,23 +489,13 @@ def openingScreen(bool):
        color1 = BLACK
        color2 = GREY
 
-   openingFONT = pygame.font.SysFont('chiller', int(factor * 70))
+   openingFONT = pygame.font.SysFont('chiller', int(factor * 110))
    DISPLAYSURF.fill(BLACK)
    textSurface = openingFONT.render('Root Ninja:', True, color1, color2)
    textRect = textSurface.get_rect()
-   textRect.center = (int(windowWidth / 2), int(windowHeight / 10))
+   textRect.center = (int(windowWidth / 2), int(windowHeight / 2))
+   openScreenRects.append((textRect))
    DISPLAYSURF.blit(textSurface, textRect)
-   textSurface = openingFONT.render('Timer Mode', True, (245,222,179), (139,69,19))
-   textRect = textSurface.get_rect()
-   openScreenRects.append((textRect))  # adds TIMER rect at index 0
-   textRect.center = (int(windowWidth / 2), int(4 * windowHeight / 10))
-   DISPLAYSURF.blit(textSurface, textRect)
-   textSurface = openingFONT.render('3 Strikes Mode', True, PURPLE, ORANGE)
-   textRect = textSurface.get_rect()
-   openScreenRects.append((textRect))  # adds 3STRIKES rect at index 1
-   textRect.center = (int(windowWidth / 2), int(8 * windowHeight / 10))
-   DISPLAYSURF.blit(textSurface, textRect)
-
 
 def terminate():
    pygame.quit()
@@ -548,7 +503,7 @@ def terminate():
 
 
 def main():
-   global DISPLAYSURF, windowWidth, windowHeight, gameMode, isFast, score, livesLeft, rootGroup
+   global DISPLAYSURF, windowWidth, windowHeight, gameStarted, isFast, score, livesLeft, rootGroup
    my_eventTime = USEREVENT + 1
    pygame.time.set_timer(my_eventTime, 200)
    changeEventTime = True
@@ -568,23 +523,25 @@ def main():
    while True:
        for event in pygame.event.get():
 
-           if not gameMode == None and changeEventTime == True:
-               changeEventTime = False
-               pygame.time.set_timer(my_eventTime, 150)
-               initMousePosX, initMousePosY = pygame.mouse.get_pos()
-
-           if livesLeft <= 0 and not gameMode == None:
+           if livesLeft <= 0 and gameStarted == True:
                drawXLives()
                pygame.display.update()
                pygame.time.wait(2000)
                rootGroup = pygame.sprite.Group()
                changeEventTime = True
-               gameMode = None
+               gameStarted = False
                livesLeft = 3
                score = 0
                pygame.time.set_timer(my_eventTime, 200)
+               drawScreenArea(False)
+               oldGameScreenRect = None
 
-           if gameMode == 'TIMER' and event.type == my_eventTime:
+           if gameStarted == True and changeEventTime == True:
+               changeEventTime = False
+               pygame.time.set_timer(my_eventTime, 150)
+               initMousePosX, initMousePosY = pygame.mouse.get_pos()
+
+           if gameStarted == True and event.type == my_eventTime:
                redrawScreen()
                oldGameScreenRect = gameScreenRect
                drawScore()
@@ -596,16 +553,15 @@ def main():
                rootGroup.update()
                drawBlackOutsideOfGSR()
 
-           if gameMode == 'TIMER' and pygame.time.get_ticks() - startTics >= fruitSpawnTimer:
+           if gameStarted == True and pygame.time.get_ticks() - startTics >= fruitSpawnTimer:
                startTics = pygame.time.get_ticks()
                fruitSpawnTimer = randint(80, 2000)
                rootGroup.add(addNewRanRoot())
 
-           if gameMode == None and event.type == pygame.MOUSEBUTTONUP:
-               gameMode = determineMode(pygame.mouse.get_pos())
-               #print(str(gameMode))
+           if gameStarted == False and event.type == pygame.MOUSEBUTTONUP:
+               gameStarted = determineMode(pygame.mouse.get_pos())
 
-           if event.type == my_eventTime and gameMode == None:
+           if event.type == my_eventTime and gameStarted == False:
                titleBool = not titleBool
                openingScreen(titleBool)
 
@@ -615,7 +571,8 @@ def main():
            if event.type == pygame.VIDEORESIZE:  # Allows resizing screen
                DISPLAYSURF = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
                windowWidth, windowHeight, = event.w, event.h
-               if not gameMode == None:
+
+               if gameStarted == True:
                    redrawScreen()
                    reconfigAllRootsPosAndSize(oldGameScreenRect)
                    oldGameScreenRect = gameScreenRect
