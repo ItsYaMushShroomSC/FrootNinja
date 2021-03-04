@@ -47,7 +47,7 @@ livesLeft = 3
 # CLASSES
 
 class Fruit(pygame.sprite.Sprite):
-   def __init__(self, images, startPosAdd, vertexPosAdd):
+   def __init__(self, images, startPosAdd, vertexPosAdd, isBomb):
        pygame.sprite.Sprite.__init__(self)
        global resizeGameScreenRect
 
@@ -68,6 +68,8 @@ class Fruit(pygame.sprite.Sprite):
        self.hasBeenSliced = False
        self.withCombo = False  # boolean that means if False then the Fruit isn't to be added to the combo num
        self.image = self.images[self.imgIndex]
+       self.isBomb = isBomb
+       self.lostPoints = 0
 
        self.resizeImg(resizeGameScreenRect, True)
 
@@ -83,16 +85,31 @@ class Fruit(pygame.sprite.Sprite):
        global score, isFast
 
        if self.hasBeenSliced == True:
-           if self.sliceImgTime == 0:
+           if self.sliceImgTime == 0 and self.isBomb == False:
                score += 10
                if isFast == True:
                    self.withCombo = True
 
+           if self.sliceImgTime == 0 and self.isBomb == True:
+               if score < 10:
+                   self.lostPoints = score
+                   score = 0
+               elif score >= 10:
+                   self.lostPoints = 10
+                   score -= 10
+
            self.image = self.images[4]
            self.sliceImgTime += 1;
 
+           if self.isBomb == True and self.sliceImgTime <= 6:
+               openingFONT = pygame.font.SysFont('chiller', int(gameScreenRect.w / 480 * 50))
+               textSurface = openingFONT.render('--- ' + str(self.lostPoints), True, BLACK, GREY)
+               textRect = textSurface.get_rect()
+               textRect.topleft = (self.curPosX+self.rect.w/2, self.curPosY)
+               DISPLAYSURF.blit(textSurface, textRect)
+
    def checkShouldRemoveRoot(self): # returns true means remove fruit
-       if self.hasBeenSliced == True and self.sliceImgTime >= 10:
+       if self.hasBeenSliced == True and self.sliceImgTime >= 15:
            #pointSpriteGroup.add()
            return True
        elif self.curPosX < 0 or self.curPosX > windowWidth or self.curPosY < 0 or self.curPosY > windowHeight:
@@ -174,27 +191,6 @@ class Fruit(pygame.sprite.Sprite):
        self.image = self.images[self.imgIndex]
        self.setImgPos()
 
-
-class Bomb():
-
-   def __init__(self, hitboxRect, startPos, endPos):
-       # self.images = img  # the bomb images, an array with an animation of the images in order
-       self.hitboxRect = hitboxRect
-       self.startXPos, self.startYPos = startPos
-       self.endXPos, self.endYPos = endPos
-       self.curPosX, self.curPosY = startPos
-       self.hasBeenSliced = False
-
-   def moveBomb(self, speed):
-       pass
-
-   def drawBomb(self):
-       pass
-
-   def drawExplodingBomb(self):
-       pass
-
-
 # GLOBAL METHODS
 
 def drawXLives():
@@ -229,11 +225,11 @@ def checkComboPoints():
         if root.withCombo == True:
             numCombos += 1
             root.withCombo = False
-            posX, posY = root.curPosX, root.curPosY
+            posX, posY = root.curPosX + root.rect.w/2, root.curPosY
 
     if numCombos > 1:
         score += numCombos
-        openingFONT = pygame.font.SysFont('chiller', int(gameScreenRect.w / 480 * 30))
+        openingFONT = pygame.font.SysFont('chiller', int(gameScreenRect.w / 480 * 50))
         textSurface = openingFONT.render('+++ ' + str(numCombos), True, BLACK, GREY)
         textRect = textSurface.get_rect()
         textRect.center = (posX, posY)
@@ -297,7 +293,7 @@ def removeRoots():
     global livesLeft
     for root in rootGroup:
         if root.checkShouldRemoveRoot() == True:
-            if root.hasBeenSliced == False:
+            if root.hasBeenSliced == False and root.isBomb == False:
                 livesLeft -= 1
             rootGroup.remove(root)
 
@@ -326,7 +322,8 @@ def reconfigAllRootsPosAndSize(oldGameScreenRect):
 
 def addNewRanRoot():
     images = None
-    randy = randint(0, 8)
+    randy = randint(0, 9)
+    isBomb = False
     if randy == 0:
         img1 = pygame.image.load('ClassicPotato-1.png')
         img2 = pygame.image.load('ClassicPotato-2.png')
@@ -390,10 +387,18 @@ def addNewRanRoot():
         img4 = pygame.image.load('YukonGoldPotato-4.png.png')
         img5 = pygame.image.load('YukonGoldPotato-7.png.png')
         images = [img1, img2, img3, img4, img5]
+    if randy == 9:
+        img1 = pygame.transform.smoothscale(pygame.image.load('Bomb-1.png.png'), (128, 128))
+        img2 = pygame.transform.smoothscale(pygame.image.load('Bomb-2.png.png'), (128, 128))
+        img3 = pygame.transform.smoothscale(pygame.image.load('Bomb-3.png.png'), (128, 128))
+        img4 = pygame.transform.smoothscale(pygame.image.load('Bomb-4.png.png'), (128, 128))
+        img5 = pygame.transform.smoothscale(pygame.image.load('Bomb-6.png.png'), (128, 128))
+        images = [img1, img2, img3, img4, img5]
+        isBomb = True
 
     img, (startX, startY), (vertexX, vertexY) = getRanStartAndVertexPos()
     left, top = gameScreenRect.topleft
-    return Fruit(images, (startX, startY), (vertexX, vertexY))
+    return Fruit(images, (startX, startY), (vertexX, vertexY), isBomb)
 
 def reconfigFruitPos(posX, posY, oldGameScreenRect): # scales the positions of coordinates appropriately when screen size changes
     global gameScreenRect, resizeGameScreenRect
@@ -535,6 +540,7 @@ def main():
                pygame.time.set_timer(my_eventTime, 200)
                drawScreenArea(False)
                oldGameScreenRect = None
+               startTics = pygame.time.get_ticks()
 
            if gameStarted == True and changeEventTime == True:
                changeEventTime = False
@@ -560,6 +566,7 @@ def main():
 
            if gameStarted == False and event.type == pygame.MOUSEBUTTONUP:
                gameStarted = determineMode(pygame.mouse.get_pos())
+               startTics = pygame.time.get_ticks()
 
            if event.type == my_eventTime and gameStarted == False:
                titleBool = not titleBool
