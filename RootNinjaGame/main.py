@@ -218,7 +218,7 @@ def drawXLives():
     DISPLAYSURF.blit(x3, rect)
 
 def checkComboPoints():
-    global score
+    global score, rootGroup
 
     numCombos = 0
     for root in rootGroup:
@@ -263,6 +263,7 @@ def getLinePoints(initPosX, initPosY, curPosX, curPosY):
     return linePointAry
 
 def checkMouseRootCollide(initPosX, initPosY, curPos):
+    global rootGroup
     curPosX, curPosY = curPos
     for root in rootGroup:
         linePointAry = getLinePoints(initPosX, initPosY, curPosX, curPosY)
@@ -290,19 +291,20 @@ def drawBlackOutsideOfGSR(): # GSR = gameScreenRect
     pygame.draw.rect(DISPLAYSURF, BLACK, (0, bottom, windowWidth, gameScreenRect.top))
 
 def removeRoots():
-    global livesLeft
+    global livesLeft, rootGroup
     for root in rootGroup:
         if root.checkShouldRemoveRoot() == True:
             if root.hasBeenSliced == False and root.isBomb == False:
                 livesLeft -= 1
-            rootGroup.remove(root)
+            root.kill()
 
 def moveAllRoots():
+    global rootGroup
     for root in rootGroup:
         root.moveFruit()
 
 def reconfigAllRootsPosAndSize(oldGameScreenRect):
-    global resizeFactor
+    global resizeFactor, rootGroup
 
     rooty = addNewRanRoot()
     rootGroup.add(rooty)
@@ -469,7 +471,7 @@ def drawScreenArea(booDraw):
    gameScreenRect.center = (int(windowWidth / 2), int(windowHeight / 2))
    left, top = gameScreenRect.topleft
    if booDraw == True:
-    DISPLAYSURF.blit(img, (left, top))
+       DISPLAYSURF.blit(img, (left, top))
 
 def determineMode(position):
    global DISPLAYSURF
@@ -506,6 +508,21 @@ def terminate():
    pygame.quit()
    sys.exit()
 
+def resetVariables():
+    global isFast, openScreenRects, gameStarted, gameScreenRect, resizeGameScreenRect, oldFactorLength, rootGroup,\
+    livesLeft, score
+
+    isFast = False
+    openScreenRects = []  # stores rectangles of the opening screen
+    gameStarted = False  # when is gameStarted is False, start screen appears
+    gameScreenRect = None
+    resizeGameScreenRect = None
+    #oldFactorLength = 1
+    rootGroup = pygame.sprite.Group()
+    rootGroup.empty()
+    score = 0
+    livesLeft = 3
+
 
 def main():
    global DISPLAYSURF, windowWidth, windowHeight, gameStarted, isFast, score, livesLeft, rootGroup
@@ -513,7 +530,6 @@ def main():
    pygame.time.set_timer(my_eventTime, 200)
    changeEventTime = True
    openingScreen(True)
-   titleTime = pygame.time.get_ticks()
    titleBool = True
    initMousePosX, initMousePosY = pygame.mouse.get_pos()
    pygame.mouse.set_cursor(*pygame.cursors.broken_x)
@@ -526,24 +542,29 @@ def main():
    startTics = pygame.time.get_ticks()
 
    while True:
+
        for event in pygame.event.get():
 
            if livesLeft <= 0 and gameStarted == True:
                drawXLives()
                pygame.display.update()
                pygame.time.wait(2000)
-               rootGroup = pygame.sprite.Group()
+               resetVariables()
                changeEventTime = True
                gameStarted = False
-               livesLeft = 3
-               score = 0
+               pygame.time.set_timer(my_eventTime, 0)
                pygame.time.set_timer(my_eventTime, 200)
+               openingScreen(True)
+               titleBool = True
                drawScreenArea(False)
                oldGameScreenRect = None
                startTics = pygame.time.get_ticks()
+               collideLine = None
+               fruitSpawnTimer = 2000
 
            if gameStarted == True and changeEventTime == True:
                changeEventTime = False
+               pygame.time.set_timer(my_eventTime, 0)
                pygame.time.set_timer(my_eventTime, 150)
                initMousePosX, initMousePosY = pygame.mouse.get_pos()
 
@@ -558,6 +579,7 @@ def main():
                rootGroup.draw(DISPLAYSURF) # draws the roots
                rootGroup.update()
                drawBlackOutsideOfGSR()
+
 
            if gameStarted == True and pygame.time.get_ticks() - startTics >= fruitSpawnTimer:
                startTics = pygame.time.get_ticks()
