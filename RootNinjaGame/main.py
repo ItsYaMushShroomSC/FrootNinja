@@ -515,7 +515,7 @@ def resetVariables():
     isFast = False
     openScreenRects = []  # stores rectangles of the opening screen
     gameStarted = False  # when is gameStarted is False, start screen appears
-    gameScreenRect = None
+    #gameScreenRect = None
     resizeGameScreenRect = None
     #oldFactorLength = 1
     rootGroup = pygame.sprite.Group()
@@ -556,7 +556,7 @@ def main():
                pygame.time.set_timer(my_eventTime, 200)
                openingScreen(True)
                titleBool = True
-               drawScreenArea(False)
+               #drawScreenArea(False)
                oldGameScreenRect = None
                startTics = pygame.time.get_ticks()
                collideLine = None
