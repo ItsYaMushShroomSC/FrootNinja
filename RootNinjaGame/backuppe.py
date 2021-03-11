@@ -13,7 +13,9 @@ windowWidth = 500
 windowHeight = 500
 
 # Surface
+factor = 5
 DISPLAYSURF = pygame.display.set_mode((windowWidth, windowHeight), pygame.RESIZABLE)
+surfaceRect = DISPLAYSURF.get_rect()
 pygame.display.set_caption('Root Ninja')
 
 # Time
@@ -35,6 +37,7 @@ gameStarted = False  # when is gameStarted is False, start screen appears
 gameScreenRect = None
 
 resizeGameScreenRect = None
+oldFactorLength = 1
 
 rootGroup = pygame.sprite.Group()
 
@@ -107,6 +110,7 @@ class Fruit(pygame.sprite.Sprite):
 
    def checkShouldRemoveRoot(self): # returns true means remove fruit
        if self.hasBeenSliced == True and self.sliceImgTime >= 15:
+           #pointSpriteGroup.add()
            return True
        elif self.curPosX < 0 or self.curPosX > windowWidth or self.curPosY < 0 or self.curPosY > windowHeight:
            return True
@@ -159,6 +163,7 @@ class Fruit(pygame.sprite.Sprite):
        self.setImgPos()
        self.setMask()
        self.checkHasBeenSliced()
+       # add more
 
    def resizeImg(self, oldGameScreenRect, isSpawn):  # resize image to screen size dimensions
        global resizeGameScreenRect, oldFactorLength
@@ -174,6 +179,7 @@ class Fruit(pygame.sprite.Sprite):
                factorLength = factorLengthY
 
            resizeGameScreenRect = oldGameScreenRect
+           oldFactorLength = factorLength
 
        if isSpawn == True:
            factorLength = gameScreenRect.w/480
@@ -189,8 +195,8 @@ class Fruit(pygame.sprite.Sprite):
 
 def drawXLives():
     global livesLeft
-    blackImg = pygame.image.load('BlackX.png').convert_alpha()
-    redImg = pygame.image.load('RedX.png').convert_alpha()
+    blackImg = pygame.image.load('BlackX.png')
+    redImg = pygame.image.load('RedX.png')
     rect = blackImg.get_rect()
     black = pygame.transform.smoothscale(blackImg, (int(rect.w * gameScreenRect.w/480), int(rect.h * gameScreenRect.w/480)))
     red = pygame.transform.smoothscale(redImg, (int(rect.w * gameScreenRect.w/480), int(rect.h * gameScreenRect.w/480)))
@@ -267,6 +273,7 @@ def checkMouseRootCollide(initPosX, initPosY, curPos):
 
             if root.rect.collidepoint((pointX, pointY)):
                 root.hasBeenSliced = True
+                print("poo")
 
 
 def getSlicedRoots(lineRect, collidedRoots):
@@ -320,67 +327,67 @@ def addNewRanRoot():
     randy = randint(0, 9)
     isBomb = False
     if randy == 0:
-        img1 = pygame.image.load('ClassicPotato-1.png').convert_alpha()
-        img2 = pygame.image.load('ClassicPotato-2.png').convert_alpha()
-        img3 = pygame.image.load('ClassicPotato-3.png').convert_alpha()
-        img4 = pygame.image.load('ClassicPotato-4.png').convert_alpha()
-        img5 = pygame.image.load('ClassicPotato-7.png.png').convert_alpha()
+        img1 = pygame.image.load('ClassicPotato-1.png')
+        img2 = pygame.image.load('ClassicPotato-2.png')
+        img3 = pygame.image.load('ClassicPotato-3.png')
+        img4 = pygame.image.load('ClassicPotato-4.png')
+        img5 = pygame.image.load('ClassicPotato-7.png.png')
         images = [img1, img2, img3, img4, img5]
     if randy == 1:
-        img1 = pygame.image.load('Carrot-1.png.png').convert_alpha()
-        img2 = pygame.image.load('Carrot-2.png.png').convert_alpha()
-        img3 = pygame.image.load('Carrot-3.png.png').convert_alpha()
-        img4 = pygame.image.load('Carrot-4.png.png').convert_alpha()
-        img5 = pygame.image.load('Carrot-7.png.png').convert_alpha()
+        img1 = pygame.image.load('Carrot-1.png.png')
+        img2 = pygame.image.load('Carrot-2.png.png')
+        img3 = pygame.image.load('Carrot-3.png.png')
+        img4 = pygame.image.load('Carrot-4.png.png')
+        img5 = pygame.image.load('Carrot-7.png.png')
         images = [img1, img2, img3, img4, img5]
     if randy == 2:
-        img1 = pygame.image.load('Garlic-1.png.png').convert_alpha()
-        img2 = pygame.image.load('Garlic-2.png.png').convert_alpha()
-        img3 = pygame.image.load('Garlic-3.png.png').convert_alpha()
-        img4 = pygame.image.load('Garlic-4.png.png').convert_alpha()
-        img5 = pygame.image.load('Garlic-6.png.png').convert_alpha()
+        img1 = pygame.image.load('Garlic-1.png.png')
+        img2 = pygame.image.load('Garlic-2.png.png')
+        img3 = pygame.image.load('Garlic-3.png.png')
+        img4 = pygame.image.load('Garlic-4.png.png')
+        img5 = pygame.image.load('Garlic-6.png.png')
         images = [img1, img2, img3, img4, img5]
     if randy == 3:
-        img1 = pygame.image.load('PurpleVitelottePotato-1.png.png').convert_alpha()
-        img2 = pygame.image.load('PurpleVitelottePotato-2.png.png').convert_alpha()
-        img3 = pygame.image.load('PurpleVitelottePotato-3.png.png').convert_alpha()
-        img4 = pygame.image.load('PurpleVitelottePotato-4.png.png').convert_alpha()
-        img5 = pygame.image.load('PurpleVitelottePotato-6.png.png').convert_alpha()
+        img1 = pygame.image.load('PurpleVitelottePotato-1.png.png')
+        img2 = pygame.image.load('PurpleVitelottePotato-2.png.png')
+        img3 = pygame.image.load('PurpleVitelottePotato-3.png.png')
+        img4 = pygame.image.load('PurpleVitelottePotato-4.png.png')
+        img5 = pygame.image.load('PurpleVitelottePotato-6.png.png')
         images = [img1, img2, img3, img4, img5]
     if randy == 4:
-        img1 = pygame.image.load('Radish-1.png.png').convert_alpha()
-        img2 = pygame.image.load('Radish-2.png.png').convert_alpha()
-        img3 = pygame.image.load('Radish-3.png.png').convert_alpha()
-        img4 = pygame.image.load('Radish-4.png.png').convert_alpha()
-        img5 = pygame.image.load('Radish-8.png.png').convert_alpha()
+        img1 = pygame.image.load('Radish-1.png.png')
+        img2 = pygame.image.load('Radish-2.png.png')
+        img3 = pygame.image.load('Radish-3.png.png')
+        img4 = pygame.image.load('Radish-4.png.png')
+        img5 = pygame.image.load('Radish-8.png.png')
         images = [img1, img2, img3, img4, img5]
     if randy == 5:
-        img1 = pygame.image.load('RedLauraPotato-1.png.png').convert_alpha()
-        img2 = pygame.image.load('RedLauraPotato-2.png.png').convert_alpha()
-        img3 = pygame.image.load('RedLauraPotato-3.png.png').convert_alpha()
-        img4 = pygame.image.load('RedLauraPotato-4.png.png').convert_alpha()
-        img5 = pygame.image.load('RedLauraPotato-7.png.png').convert_alpha()
+        img1 = pygame.image.load('RedLauraPotato-1.png.png')
+        img2 = pygame.image.load('RedLauraPotato-2.png.png')
+        img3 = pygame.image.load('RedLauraPotato-3.png.png')
+        img4 = pygame.image.load('RedLauraPotato-4.png.png')
+        img5 = pygame.image.load('RedLauraPotato-7.png.png')
         images = [img1, img2, img3, img4, img5]
     if randy == 6:
-        img1 = pygame.image.load('SweetPotato-1.png.png').convert_alpha()
-        img2 = pygame.image.load('SweetPotato-2.png.png').convert_alpha()
-        img3 = pygame.image.load('SweetPotato-3.png.png').convert_alpha()
-        img4 = pygame.image.load('SweetPotato-4.png.png').convert_alpha()
-        img5 = pygame.image.load('SweetPotato-5.png.png').convert_alpha()
+        img1 = pygame.image.load('SweetPotato-1.png.png')
+        img2 = pygame.image.load('SweetPotato-2.png.png')
+        img3 = pygame.image.load('SweetPotato-3.png.png')
+        img4 = pygame.image.load('SweetPotato-4.png.png')
+        img5 = pygame.image.load('SweetPotato-5.png.png')
         images = [img1, img2, img3, img4, img5]
     if randy == 7:
-        img1 = pygame.image.load('Turnip-1.png.png').convert_alpha()
-        img2 = pygame.image.load('Turnip-2.png.png').convert_alpha()
-        img3 = pygame.image.load('Turnip-3.png.png').convert_alpha()
-        img4 = pygame.image.load('Turnip-4.png.png').convert_alpha()
-        img5 = pygame.image.load('Turnip-10.png.png').convert_alpha()
+        img1 = pygame.image.load('Turnip-1.png.png')
+        img2 = pygame.image.load('Turnip-2.png.png')
+        img3 = pygame.image.load('Turnip-3.png.png')
+        img4 = pygame.image.load('Turnip-4.png.png')
+        img5 = pygame.image.load('Turnip-10.png.png')
         images = [img1, img2, img3, img4, img5]
     if randy == 8:
-        img1 = pygame.image.load('YukonGoldPotato-1.png.png').convert_alpha()
-        img2 = pygame.image.load('YukonGoldPotato-2.png.png').convert_alpha()
-        img3 = pygame.image.load('YukonGoldPotato-3.png.png').convert_alpha()
-        img4 = pygame.image.load('YukonGoldPotato-4.png.png').convert_alpha()
-        img5 = pygame.image.load('YukonGoldPotato-7.png.png').convert_alpha()
+        img1 = pygame.image.load('YukonGoldPotato-1.png.png')
+        img2 = pygame.image.load('YukonGoldPotato-2.png.png')
+        img3 = pygame.image.load('YukonGoldPotato-3.png.png')
+        img4 = pygame.image.load('YukonGoldPotato-4.png.png')
+        img5 = pygame.image.load('YukonGoldPotato-7.png.png')
         images = [img1, img2, img3, img4, img5]
     if randy == 9:
         img1 = pygame.transform.smoothscale(pygame.image.load('Bomb-1.png.png'), (128, 128))
@@ -400,7 +407,8 @@ def reconfigFruitPos(posX, posY, oldGameScreenRect): # scales the positions of c
 
     factorLengthX = gameScreenRect.w/oldGameScreenRect.w
     factorLengthY = gameScreenRect.h/oldGameScreenRect.h
-
+    #print(factorLengthY)
+    #print(factorLengthX)
     resizeGameScreenRect = oldGameScreenRect
     newPosX, newPosY = factorLengthX*posX, factorLengthY*posY
     return newPosX, newPosY
@@ -429,6 +437,12 @@ def getFactorLength():
        factorLength = windowWidth
    return factorLength
 
+def drawCursorTrail():  # if the cursor speed is greater than minSpeed, then a trail will for behind it until it's greater than a certain amount
+    global cursorSpeed
+    particles = []
+    particles.append()
+
+
 def getCursorSpeedIsFast(initialMousePos, curMousePos): # every 200 milliseconds, the mouse should have moved past at least 100 pixels
 
    xInitial, yInitial = initialMousePos
@@ -436,9 +450,8 @@ def getCursorSpeedIsFast(initialMousePos, curMousePos): # every 200 milliseconds
    xDif = abs(xCur - xInitial)
    yDif = abs(yCur - yInitial)
    distance = math.sqrt(xDif*xDif + yDif*yDif)
-   factato = gameScreenRect.w/480
    cursorSpeed = distance, 200 # cursor speed is distance/200 millaseconds
-   if distance > 185 * factato:
+   if distance > 185:
        return True
    else:
        return False
@@ -470,7 +483,7 @@ def determineMode(position):
        return False
 
 def openingScreen(bool):
-   global DISPLAYSURF, openingFONT, windowWidth, windowHeight, openScreenRects, rootGroup
+   global DISPLAYSURF, openingFONT, windowWidth, windowHeight, openScreenRects, factor, rootGroup
    openScreenRects.clear();
    color1 = GREY
    color2 = BLACK
@@ -496,25 +509,25 @@ def terminate():
    sys.exit()
 
 def resetVariables():
-    global isFast, openScreenRects, gameStarted, gameScreenRect, resizeGameScreenRect, rootGroup,\
+    global isFast, openScreenRects, gameStarted, gameScreenRect, resizeGameScreenRect, oldFactorLength, rootGroup,\
     livesLeft, score
 
-    windowWidth = 500
-    windowHeight = 500
     #isFast = False
     #openScreenRects = []  # stores rectangles of the opening screen
     gameStarted = False  # when is gameStarted is False, start screen appears
     #gameScreenRect = None
     #resizeGameScreenRect = None
+    #oldFactorLength = 1
     #rootGroup = pygame.sprite.Group()
     rootGroup.empty()
     score = 0
     livesLeft = 3
 
+
 def main():
    global DISPLAYSURF, windowWidth, windowHeight, gameStarted, isFast, score, livesLeft, rootGroup
    my_eventTime = USEREVENT + 1
-   pygame.time.set_timer(my_eventTime, 150)
+   pygame.time.set_timer(my_eventTime, 200)
    changeEventTime = True
    openingScreen(True)
    titleBool = True
@@ -522,6 +535,8 @@ def main():
    pygame.mouse.set_cursor(*pygame.cursors.broken_x)
    drawScreenArea(False)
    oldGameScreenRect = None
+
+   collideLine = None
 
    fruitSpawnTimer = 2000 # when fruitSpawnTimer time has elapsed, a new fruit should spawn
    startTics = pygame.time.get_ticks()
@@ -537,14 +552,14 @@ def main():
                resetVariables()
                changeEventTime = True
                gameStarted = False
-               #pygame.time.set_timer(my_eventTime, 0)
-               #pygame.time.set_timer(my_eventTime, 200)
+               pygame.time.set_timer(my_eventTime, 0)
+               pygame.time.set_timer(my_eventTime, 200)
                fruitSpawnTimer = 2000
 
            if gameStarted == True and changeEventTime == True:
                changeEventTime = False
-               #pygame.time.set_timer(my_eventTime, 0)
-               #pygame.time.set_timer(my_eventTime, 150)
+               pygame.time.set_timer(my_eventTime, 0)
+               pygame.time.set_timer(my_eventTime, 150)
                initMousePosX, initMousePosY = pygame.mouse.get_pos()
 
            if gameStarted == True and event.type == my_eventTime:
@@ -594,6 +609,7 @@ def main():
                    checkMouseRootCollide(initMousePosX, initMousePosY, curPos)
 
                initMousePosX, initMousePosY = pygame.mouse.get_pos()
+               #print(str(isFast))
 
            if event.type == my_eventTime:
                initMousePosX, initMousePosY = pygame.mouse.get_pos()
